@@ -1,13 +1,28 @@
-
 const API_BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:5000"
+  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000"
 ).replace(/\/+$/, "");
 
-async function request(path, options = {}) {
+const TOKEN_KEY = "access_token";
+
+export const getToken = () => sessionStorage.getItem(TOKEN_KEY);
+export const setToken = (token) => sessionStorage.setItem(TOKEN_KEY, token);
+export const clearToken = () => sessionStorage.removeItem(TOKEN_KEY);
+
+function extractMessage(data, status) {
+  if (status === 429) return "Too many attempts. Please try again later.";
+  if (typeof data === "string") return data || `HTTP ${status}`;
+  const detail = data?.detail ?? data?.error ?? data?.message ?? data?.msg;
+  if (Array.isArray(detail)) return detail.map((e) => e.msg).join(", ");
+  return detail || `HTTP ${status}`;
+}
+
+export async function request(path, options = {}) {
+  const token = getToken();
   const headers = {
     ...(options.body instanceof FormData
       ? {}
       : { "Content-Type": "application/json" }),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers,
   };
 
@@ -21,13 +36,14 @@ async function request(path, options = {}) {
     ? await response.json()
     : await response.text();
 
-  if (!response.ok) {
-    const message =
-      typeof data === "object" && data !== null
-        ? data.error || data.message || data.msg
-        : data;
+  // Token expired or invalid: log out
+  if (response.status === 401 && token) {
+    clearToken();
+    window.dispatchEvent(new Event("auth:logout"));
+  }
 
-    throw new Error(message || `HTTP ${response.status}`);
+  if (!response.ok) {
+    throw new Error(extractMessage(data, response.status));
   }
 
   return data;
@@ -39,8 +55,6 @@ export function getScanHistory() {
 
 export function predictMRI(file, patientId = "") {
   const formData = new FormData();
-
-  // Must match the field name expected by Flask.
   formData.append("file", file);
 
   if (patientId.trim()) {

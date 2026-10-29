@@ -16,7 +16,7 @@ import {
   Legend,
 } from "recharts";
 import { getScanHistory, predictMRI } from "./services/api";
-import "./Dashboard.css";
+import "./dashboard.css";
 
 const NAV = [
   ["Overview", "⌂"],
