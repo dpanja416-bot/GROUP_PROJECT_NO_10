@@ -27,3 +27,4 @@ storage/tmp/*
 # OS files
 .DS_Store
 Thumbs.db
+*.db
