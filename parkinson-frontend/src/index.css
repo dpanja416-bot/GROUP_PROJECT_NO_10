@@ -1,25 +1,30 @@
-
-/* =========================================
-   NEUROVISTA — GLOBAL APP STYLES
-   ========================================= */
+/* ============================================================
+   NEUROVISTA — GLOBAL MEDICAL UI
+   Dark glassmorphism | Prominent ECG | Cyan neon lighting
+   ============================================================ */
 
 :root {
-  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
-  color: #17233b;
-  background: #f4f7fc;
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+  color: #eff9ff;
+  background: #030b17;
+
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  --primary: #2563eb;
-  --primary-dark: #1d4ed8;
-  --text-main: #17233b;
-  --text-muted: #718096;
-  --page-bg: #f4f7fc;
-  --card-bg: #ffffff;
-  --border: #e5eaf2;
-  --sidebar-bg: #101b32;
+  --bg-main: #030b17;
+  --bg-glass: rgba(8, 24, 42, 0.56);
+  --bg-glass-strong: rgba(8, 24, 42, 0.72);
+
+  --cyan: #42eaff;
+  --cyan-bright: #83f6ff;
+  --blue: #438dff;
+
+  --text-main: #eff9ff;
+  --text-muted: #a4bfd5;
+
+  --border-glass: rgba(76, 212, 255, 0.22);
 }
 
 * {
@@ -30,28 +35,37 @@ html {
   min-width: 320px;
   min-height: 100%;
   scroll-behavior: smooth;
+  background: var(--bg-main);
 }
 
 body {
-  margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: var(--page-bg);
+  margin: 0;
+  overflow-x: hidden;
+  color: var(--text-main);
+  background:
+    radial-gradient(
+      ellipse at 50% 35%,
+      rgba(0, 105, 160, 0.13),
+      transparent 58%
+    ),
+    linear-gradient(135deg, #030b17, #061526 52%, #030b17);
 }
 
-body,
+/* Keep the application above the ECG background. */
+#root {
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  background: transparent;
+}
+
 button,
 input,
 select,
 textarea {
-  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
-}
-
-button,
-input,
-select,
-textarea {
-  font-size: inherit;
+  font: inherit;
 }
 
 button {
@@ -60,21 +74,16 @@ button {
 
 button:disabled {
   cursor: not-allowed;
-  opacity: 0.6;
-}
-
-button:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible,
-a:focus-visible {
-  outline: 3px solid rgba(37, 99, 235, 0.35);
-  outline-offset: 3px;
+  opacity: 0.55;
 }
 
 a {
-  color: inherit;
+  color: var(--cyan);
   text-decoration: none;
+}
+
+a:hover {
+  color: var(--cyan-bright);
 }
 
 img,
@@ -82,52 +91,379 @@ svg {
   max-width: 100%;
 }
 
-#root {
-  width: 100%;
+::selection {
+  color: #00111c;
+  background: rgba(66, 234, 255, 0.8);
+}
+
+/* ============================================================
+   ECG BACKGROUND LAYER
+   Supports common wrapper names for the ECGBackground component.
+   ============================================================ */
+
+.ecg-background,
+.ecg-background-container,
+.ecg-bg,
+.ecg-background-wrapper {
+  position: fixed !important;
+  inset: 0 !important;
+
+  width: 100% !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+
+  overflow: hidden !important;
+  pointer-events: none !important;
+
+  z-index: -1 !important;
+  opacity: 1 !important;
+}
+
+/* Make the ECG SVG occupy the entire browser window. */
+.ecg-background svg,
+.ecg-background-container svg,
+.ecg-bg svg,
+.ecg-background-wrapper svg {
+  position: absolute !important;
+  inset: 0 !important;
+
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+
+  overflow: visible !important;
+}
+
+/* Boost ECG visibility without changing its shape. */
+.ecg-background svg path,
+.ecg-background-container svg path,
+.ecg-bg svg path,
+.ecg-background-wrapper svg path {
+  filter:
+    drop-shadow(0 0 3px rgba(39, 225, 255, 0.95))
+    drop-shadow(0 0 9px rgba(39, 225, 255, 0.65))
+    drop-shadow(0 0 20px rgba(39, 150, 255, 0.35));
+}
+
+/* Keep all application pages in front of the ECG. */
+.app-content {
+  position: relative;
+  z-index: 1;
   min-height: 100vh;
-}
-
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #c5d0e0 transparent;
-}
-
-*::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
-}
-
-*::-webkit-scrollbar-track {
   background: transparent;
 }
 
-*::-webkit-scrollbar-thumb {
-  background: #c5d0e0;
-  border-radius: 20px;
-}
+/* ============================================================
+   GLOBAL GLASS EFFECT
+   ============================================================ */
 
-::selection {
-  color: #ffffff;
-  background: #2563eb;
-}
-
-input,
-select,
-textarea {
+.nv-app {
+  position: relative;
+  min-height: 100vh;
   color: var(--text-main);
+  background: transparent !important;
 }
 
-input::placeholder,
-textarea::placeholder {
-  color: #9aa7b9;
+/* Sidebar stays readable, but is not completely opaque. */
+.nv-sidebar {
+  background: rgba(3, 13, 26, 0.78) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
-@media (max-width: 768px) {
-  body {
-    font-size: 14px;
+/* Topbar lets background color and ECG light show through. */
+.nv-topbar {
+  background: rgba(5, 17, 31, 0.55) !important;
+  backdrop-filter: blur(9px);
+  -webkit-backdrop-filter: blur(9px);
+  border-bottom-color: rgba(66, 234, 255, 0.2) !important;
+}
+
+/* Main content must not cover the ECG. */
+.nv-main,
+.nv-content {
+  background: transparent !important;
+}
+
+/* ============================================================
+   TRANSPARENT DASHBOARD CARDS
+   ============================================================ */
+
+.nv-metric-card,
+.nv-panel {
+  position: relative;
+  background: rgba(10, 27, 46, 0.48) !important;
+  border: 1px solid rgba(74, 211, 255, 0.28) !important;
+
+  backdrop-filter: blur(5px) saturate(120%);
+  -webkit-backdrop-filter: blur(5px) saturate(120%);
+
+  box-shadow:
+    0 8px 30px rgba(0, 0, 0, 0.14),
+    inset 0 1px 0 rgba(210, 247, 255, 0.045);
+
+  transition:
+    background 220ms ease,
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    transform 220ms ease;
+}
+
+/* Make the ECG more visible through the cards on hover. */
+.nv-metric-card:hover,
+.nv-panel:hover {
+  background: rgba(10, 34, 55, 0.40) !important;
+  border-color: rgba(66, 234, 255, 0.55) !important;
+
+  box-shadow:
+    0 10px 32px rgba(0, 0, 0, 0.18),
+    0 0 20px rgba(66, 234, 255, 0.10),
+    inset 0 1px 0 rgba(220, 250, 255, 0.08);
+
+  transform: translateY(-2px);
+}
+
+/* Keep text legible over the background. */
+.nv-metric-label,
+.nv-metric-caption,
+.nv-panel p,
+.nv-subtitle {
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+}
+
+/* Transparent chart areas allow background light through. */
+.nv-chart,
+.nv-donut-wrap,
+.nv-chart-grid,
+.nv-bottom-grid {
+  background: transparent !important;
+}
+
+/* ============================================================
+   WELCOME BANNER
+   ============================================================ */
+
+.nv-welcome-banner {
+  background:
+    radial-gradient(
+      ellipse at 85% 40%,
+      rgba(40, 210, 255, 0.15),
+      transparent 45%
+    ),
+    linear-gradient(
+      115deg,
+      rgba(7, 30, 50, 0.66),
+      rgba(12, 43, 72, 0.56)
+    ) !important;
+
+  border-color: rgba(66, 234, 255, 0.34) !important;
+
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+}
+
+/* ============================================================
+   FORMS AND INPUTS
+   ============================================================ */
+
+.nv-field input,
+.nv-search-field input,
+.nv-date-filter,
+.nv-field select,
+.nv-field textarea {
+  color: #effaff !important;
+  background: rgba(3, 15, 29, 0.68) !important;
+  border: 1px solid rgba(85, 203, 255, 0.28) !important;
+}
+
+.nv-field input::placeholder,
+.nv-search-field input::placeholder,
+.nv-field textarea::placeholder {
+  color: #8ba8c0;
+}
+
+.nv-field input:focus,
+.nv-search-field input:focus,
+.nv-date-filter:focus,
+.nv-field select:focus,
+.nv-field textarea:focus {
+  outline: none;
+  border-color: var(--cyan) !important;
+  box-shadow: 0 0 0 3px rgba(66, 234, 255, 0.12);
+}
+
+.nv-dropzone {
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(31, 201, 255, 0.12),
+      transparent 70%
+    ),
+    rgba(5, 22, 39, 0.42) !important;
+
+  border-color: rgba(66, 234, 255, 0.5) !important;
+}
+
+.nv-dropzone:hover,
+.nv-dropzone.dragging {
+  background: rgba(10, 55, 76, 0.45) !important;
+  border-color: var(--cyan-bright) !important;
+
+  box-shadow:
+    inset 0 0 25px rgba(66, 234, 255, 0.08),
+    0 0 22px rgba(66, 234, 255, 0.12);
+}
+
+/* ============================================================
+   TABLES
+   ============================================================ */
+
+.nv-table th {
+  background: rgba(4, 16, 30, 0.72) !important;
+  color: #a9c8df;
+}
+
+.nv-table td {
+  background: rgba(7, 22, 38, 0.24);
+}
+
+.nv-table tbody tr:hover {
+  background: rgba(45, 208, 255, 0.08) !important;
+}
+
+.nv-table tbody tr:hover td {
+  background: transparent;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+
+.nv-primary-button {
+  color: #031522 !important;
+  background: linear-gradient(110deg, #42eaff, #66aaff) !important;
+  border-color: rgba(151, 249, 255, 0.6) !important;
+
+  box-shadow:
+    0 0 14px rgba(66, 234, 255, 0.15),
+    0 4px 15px rgba(0, 0, 0, 0.12);
+}
+
+.nv-primary-button:hover:not(:disabled) {
+  background: linear-gradient(110deg, #83f5ff, #8cc2ff) !important;
+  box-shadow:
+    0 0 24px rgba(66, 234, 255, 0.28),
+    0 5px 18px rgba(0, 0, 0, 0.18);
+}
+
+.nv-secondary-button,
+.nv-light-button,
+.nv-icon-button,
+.nv-notification-button {
+  background: rgba(12, 34, 54, 0.52) !important;
+  border-color: rgba(83, 207, 255, 0.28) !important;
+}
+
+.nv-secondary-button:hover,
+.nv-light-button:hover,
+.nv-icon-button:hover,
+.nv-notification-button:hover {
+  color: var(--cyan-bright) !important;
+  background: rgba(19, 62, 84, 0.58) !important;
+  border-color: rgba(66, 234, 255, 0.65) !important;
+  box-shadow: 0 0 18px rgba(66, 234, 255, 0.12);
+}
+
+/* ============================================================
+   SCROLLBARS
+   ============================================================ */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(66, 196, 239, 0.5) rgba(4, 15, 28, 0.6);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(3, 12, 23, 0.65);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(66, 196, 239, 0.42);
+  border: 2px solid rgba(3, 12, 23, 0.65);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(66, 234, 255, 0.75);
+}
+
+/* ============================================================
+   LOGIN AND REGISTER PAGE SUPPORT
+   ============================================================ */
+
+.auth-page,
+.login-page,
+.register-page {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  background: transparent !important;
+}
+
+.auth-card,
+.login-card,
+.register-card {
+  background: rgba(7, 24, 42, 0.66) !important;
+  border: 1px solid rgba(66, 234, 255, 0.25) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.25),
+    0 0 25px rgba(66, 234, 255, 0.05);
+}
+
+/* ============================================================
+   RESPONSIVE BEHAVIOR
+   ============================================================ */
+
+@media (max-width: 850px) {
+  .nv-sidebar {
+    background: rgba(3, 13, 26, 0.86) !important;
+  }
+
+  .nv-topbar {
+    background: rgba(5, 17, 31, 0.70) !important;
+  }
+
+  .nv-metric-card,
+  .nv-panel {
+    background: rgba(9, 26, 44, 0.56) !important;
   }
 }
 
+@media (max-width: 540px) {
+  .nv-metric-card,
+  .nv-panel {
+    background: rgba(8, 25, 43, 0.62) !important;
+  }
+
+  .nv-welcome-banner {
+    background:
+      radial-gradient(
+        ellipse at 80% 20%,
+        rgba(40, 210, 255, 0.12),
+        transparent 55%
+      ),
+      rgba(7, 25, 43, 0.68) !important;
+  }
+}
+
+/* Respect users who prefer reduced motion. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
