@@ -1,0 +1,17 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.db
+
+# secrets
+.env
+
+# model weights and scans (never commit)
+*.pth
+*.nii
+*.nii.gz
+
+# node
+node_modules/
+dist/
