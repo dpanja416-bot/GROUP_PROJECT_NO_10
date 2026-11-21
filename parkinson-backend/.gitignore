@@ -28,3 +28,6 @@ storage/tmp/*
 .DS_Store
 Thumbs.db
 *.db
+*.pth
+*.nii
+*.nii.gz
