@@ -221,6 +221,7 @@ export default function Dashboard() {
   const [dragging, setDragging] = useState(false);
 
   const fileInputRef = useRef(null);
+  const folderInputRef = useRef(null);
   const notificationId = useRef(0);
 
   const notify = useCallback((type, title, message) => {
@@ -394,16 +395,21 @@ export default function Dashboard() {
     });
   }, [records, search, dateFilter]);
 
+  // DICOM slices (also files with no extension, which is common in DICOM folders)
+  const isDicomSlice = (file) =>
+    /\.(dcm|dicom|ima)$/i.test(file.name) || !file.name.includes(".");
+
   function acceptFiles(fileList) {
-    const allowed = /\.(jpe?g|png|dcm|dicom)$/i;
     const files = Array.from(fileList || []);
-    const valid = files.filter((file) => allowed.test(file.name));
+    const valid = files.filter(
+      (file) => isDicomSlice(file) || /\.(nii|nii\.gz|zip)$/i.test(file.name)
+    );
 
     if (valid.length !== files.length) {
       notify(
         "error",
-        "Unsupported file format",
-        "Choose JPG, PNG, DCM, or DICOM files."
+        "Some files were skipped",
+        "Use .nii, .nii.gz, a DICOM .zip, or the .dcm files of one scan."
       );
     }
 
@@ -412,7 +418,7 @@ export default function Dashboard() {
       notify(
         "success",
         "Files added",
-        `${valid.length} MRI file(s) are ready for analysis.`
+        `${valid.length} file(s) are ready for analysis.`
       );
     }
   }
@@ -431,15 +437,30 @@ export default function Dashboard() {
     let succeeded = 0;
     let failed = 0;
 
-    for (const file of selectedFiles) {
-      try {
-        notify("info", "Analysis started", `Processing ${file.name}.`);
+    // All DICOM slices together are ONE scan; every other file is its own scan.
+    const dicomSlices = selectedFiles.filter(isDicomSlice);
+    const otherFiles = selectedFiles.filter((file) => !isDicomSlice(file));
+    const jobs = [];
+    if (dicomSlices.length) {
+      jobs.push({
+        label:
+          dicomSlices.length === 1
+            ? dicomSlices[0].name
+            : `DICOM series (${dicomSlices.length} files)`,
+        files: dicomSlices,
+      });
+    }
+    otherFiles.forEach((file) => jobs.push({ label: file.name, files: [file] }));
 
-        const result = await predictMRI(file, patientId);
+    for (const job of jobs) {
+      try {
+        notify("info", "Analysis started", `Processing ${job.label}.`);
+
+        const result = await predictMRI(job.files, patientId);
         succeeded += 1;
 
         setLatestResult({
-          fileName: file.name,
+          fileName: job.label,
           patientId: patientId || "Not provided",
           result,
         });
@@ -447,20 +468,21 @@ export default function Dashboard() {
         notify(
           "success",
           "Analysis completed",
-          `${file.name} was processed successfully.`
+          `${job.label} was processed successfully.`
         );
       } catch (error) {
         failed += 1;
         notify(
           "error",
           "Analysis failed",
-          `${file.name}: ${getErrorMessage(error)}`
+          `${job.label}: ${getErrorMessage(error)}`
         );
       }
     }
 
     setSelectedFiles([]);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (folderInputRef.current) folderInputRef.current.value = "";
 
     // The displayed metrics and charts are recalculated from this response.
     const updatedRecords = await refreshHistory(true);
@@ -677,18 +699,35 @@ export default function Dashboard() {
                   }}
                 >
                   <span className="nv-upload-icon">↑</span>
-                  <strong>Drop MRI images here</strong>
+                  <strong>Drop MRI scans here</strong>
                   <span>or browse files from your device</span>
-                  <small>JPG · PNG · DCM · DICOM · Multiple files supported</small>
+                  <small>NIfTI (.nii, .nii.gz) · DICOM slices (.dcm) · DICOM .zip</small>
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".jpg,.jpeg,.png,.dcm,.dicom"
+                    accept=".dcm,.dicom,.ima,.nii,.nii.gz,.zip"
                     multiple
                     hidden
                     onChange={(event) => acceptFiles(event.target.files)}
                   />
                 </div>
+
+                <button
+                  type="button"
+                  className="nv-text-button"
+                  onClick={() => folderInputRef.current?.click()}
+                >
+                  Choose a DICOM folder
+                </button>
+                <input
+                  ref={folderInputRef}
+                  type="file"
+                  webkitdirectory=""
+                  directory=""
+                  multiple
+                  hidden
+                  onChange={(event) => acceptFiles(event.target.files)}
+                />
 
                 {selectedFiles.length > 0 && (
                   <div className="nv-selected-files">
@@ -702,24 +741,47 @@ export default function Dashboard() {
                         Remove all
                       </button>
                     </div>
-                    {selectedFiles.map((file, index) => (
-                      <div className="nv-file-row" key={`${file.name}-${index}`}>
-                        <span className="nv-file-icon">▧</span>
-                        <span className="nv-file-name">{file.name}</span>
-                        <small>{(file.size / 1024 / 1024).toFixed(2)} MB</small>
-                        <button
-                          type="button"
-                          className="nv-dismiss"
-                          onClick={() =>
+                    {(() => {
+                      const dicomSlices = selectedFiles.filter(isDicomSlice);
+                      const others = selectedFiles.filter((file) => !isDicomSlice(file));
+                      const rows = [];
+                      if (dicomSlices.length) {
+                        rows.push({
+                          key: "dicom-series",
+                          name: `DICOM series (${dicomSlices.length} files)`,
+                          size: dicomSlices.reduce((sum, f) => sum + f.size, 0),
+                          remove: () =>
                             setSelectedFiles((current) =>
-                              current.filter((_, i) => i !== index)
-                            )
-                          }
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
+                              current.filter((f) => !isDicomSlice(f))
+                            ),
+                        });
+                      }
+                      others.forEach((file, i) =>
+                        rows.push({
+                          key: `${file.name}-${i}`,
+                          name: file.name,
+                          size: file.size,
+                          remove: () =>
+                            setSelectedFiles((current) =>
+                              current.filter((f) => f !== file)
+                            ),
+                        })
+                      );
+                      return rows.map((row) => (
+                        <div className="nv-file-row" key={row.key}>
+                          <span className="nv-file-icon">▧</span>
+                          <span className="nv-file-name">{row.name}</span>
+                          <small>{(row.size / 1024 / 1024).toFixed(2)} MB</small>
+                          <button
+                            type="button"
+                            className="nv-dismiss"
+                            onClick={row.remove}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ));
+                    })()}
                   </div>
                 )}
 

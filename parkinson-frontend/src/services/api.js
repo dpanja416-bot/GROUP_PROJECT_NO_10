@@ -53,9 +53,11 @@ export function getScanHistory() {
   return request("/api/history");
 }
 
-export function predictMRI(file, patientId = "") {
+// files: one File (NIfTI / zip) OR an array of .dcm slices that form ONE scan.
+export function predictMRI(files, patientId = "") {
+  const list = Array.isArray(files) ? files : [files];
   const formData = new FormData();
-  formData.append("file", file);
+  list.forEach((file) => formData.append("file", file));
 
   if (patientId.trim()) {
     formData.append("patient_id", patientId.trim());
