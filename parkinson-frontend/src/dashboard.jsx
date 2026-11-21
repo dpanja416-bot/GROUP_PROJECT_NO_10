@@ -1,4 +1,3 @@
-
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ResponsiveContainer,
@@ -461,7 +460,7 @@ export default function Dashboard() {
 
         setLatestResult({
           fileName: job.label,
-          patientId: patientId || "Not provided",
+          patientId: result?.patient_id || patientId || "Not provided",
           result,
         });
 
@@ -828,22 +827,6 @@ export default function Dashboard() {
                     <div><strong>Review the result</strong><p>Check prediction, confidence, and saved history.</p></div>
                   </div>
                 </section>
-
-                {latestResult && (
-                  <section className="nv-panel nv-result-panel">
-                    <span className="nv-eyebrow">LATEST RESPONSE</span>
-                    <h2>Analysis response</h2>
-                    <p><strong>File:</strong> {latestResult.fileName}</p>
-                    <p><strong>Patient ID:</strong> {latestResult.patientId}</p>
-                    <pre className="nv-result-json">
-                      {JSON.stringify(latestResult.result, null, 2)}
-                    </pre>
-                    <p className="nv-disclaimer">
-                      Confirm that the response matches your trained model's
-                      output schema before clinical or research interpretation.
-                    </p>
-                  </section>
-                )}
               </div>
             </section>
           )}

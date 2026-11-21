@@ -1,7 +1,9 @@
 import hashlib
+import secrets
 import tempfile
 import threading
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -47,6 +49,8 @@ def save_upload(file: UploadFile, dest: Path) -> tuple[int, str]:
     if size == 0:
         raise InputError("Empty file.", 400)
     return size, digest.hexdigest()
+
+
 def save_dicom_files(files: list[UploadFile], workdir: Path) -> tuple[list[Path], str]:
     """Several .dcm files uploaded together = ONE scan series."""
     if len(files) > settings.max_zip_files:
@@ -87,6 +91,7 @@ def run_model_on_dicom_files(paths: list[Path], file_hash: str, workdir: Path):
     except ValueError as exc:
         raise InputError(str(exc), 422)
 
+
 # ---------- the pipeline: detect format -> convert if needed -> model ----------
 def run_model_on_file(raw: Path, filename: str, file_hash: str, workdir: Path):
     """Returns (PredictionResult, input_format_text)."""
@@ -122,6 +127,11 @@ def run_model_on_file(raw: Path, filename: str, file_hash: str, workdir: Path):
         return predictor.predict_volume(nifti), input_format
     except ValueError as exc:  # unreadable/invalid scan
         raise InputError(str(exc), 422)
+
+
+def generate_patient_id() -> str:
+    """e.g. PT-20261122-A1B2C3"""
+    return f"PT-{datetime.now(timezone.utc):%Y%m%d}-{secrets.token_hex(3).upper()}"
 
 
 # ---------- main entry used by the route ----------
@@ -160,7 +170,7 @@ def analyze_upload(db: Session, files: list[UploadFile], patient_id: Optional[st
 
     row = Prediction(
         user_id=user.id if user else None,
-        patient_id=(patient_id or "").strip()[:64] or None,
+        patient_id=(patient_id or "").strip()[:64] or generate_patient_id(),
         filename=filename[:255],
         file_hash=file_hash,
         prediction=label,
