@@ -1,6 +1,6 @@
-const API_BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000"
-).replace(/\/+$/, "");
+// Empty = same address as the page. The Vite dev server forwards /api to the backend.
+// Set VITE_API_BASE_URL only if the backend is hosted somewhere else.
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "");
 
 const TOKEN_KEY = "access_token";
 
